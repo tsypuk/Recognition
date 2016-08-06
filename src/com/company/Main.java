@@ -1,6 +1,5 @@
 package com.company;
 
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -9,10 +8,24 @@ import java.util.List;
 
 import javax.imageio.ImageIO;
 
+// TODO Create graphical alphabet: every symbol write to file 'A' -> A.png for next aplhorithm of recognition with images compare.
+
+// TODO Parrallel the tasks for groups of text.
+
+// TODO add gradle, slf4j.
+
+// TODO Add JUint to test the image files library with the recognition results.
+
+// TODO Add connection to DB using JDBC to write results of recognition to Mysql.
+
+/**
+ * This is the scratch of recognitaion.
+ * The basic alhorithm that calculates the nubmer of pixel in each area and compares it to dictionary.
+ */
 public class Main {
-    //    private static final int BLACK_FILTER_COLOUR = -11579569;
-    private static final int BLACK_FILTER_COLOUR = -1157956;
-    private static final int WHITE_COLOUR = -1;
+    //    private static final int BLACK_FILTER_COLOR = -11579569;
+    private static final int BLACK_FILTER_COLOR = -1157956;
+    private static final int LINE_BASE_COLOR = -986896;
 
     private static int width;
     private static int height;
@@ -20,23 +33,19 @@ public class Main {
     private static List<Integer> yLines = new ArrayList<>();
 
     public static void main(String[] args) {
-//	      Read file from FS
-        BufferedImage img = null;
         try {
-//            Prepare image for processing
-            img = ImageIO.read(new File("image.png"));
+//	        Read file from FS
+            BufferedImage img = ImageIO.read(new File("image.png"));
+//          Prepare image for processing
             img = prepareImage(img);
             width = img.getWidth();
             height = img.getHeight();
             System.out.println(width + "x" + height);
-//            readPixels(img);
             calculateLines(img);
             int previousX = 0;
             int previousY = 0;
 
-//            for (Integer xLine : xLines) {
             for (Integer yLine : yLines) {
-//                    printSymbolToScreen(previousX, previousY, xLine, yLine, img);
                 readNumber(previousX, previousY, xLines.get(0), yLine, img);
                 System.out.print("  :  ");
                 readEnglish(xLines.get(0), previousY, xLines.get(1), yLine, img);
@@ -45,18 +54,17 @@ public class Main {
                 System.out.println();
                 previousY = yLine;
             }
-//                previousX = xLine;
-//            }
-
-//        Find first word
         } catch (IOException e) {
         }
     }
 
+    /**
+     *  Removes the areas that do not hold information and do not take place in information recognition.
+     */
     private static BufferedImage prepareImage(BufferedImage source) {
         final int upperLeftConerX = 246;
         final int upperLeftConerY = 340;
-        BufferedImage subimage = source.getSubimage(upperLeftConerX, upperLeftConerY, 2400 , 1050);
+        BufferedImage subimage = source.getSubimage(upperLeftConerX, upperLeftConerY, 2400, 1050);
 //        File outputfile = new File("image222.png");
 //        try {
 //            ImageIO.write(subimage, "png", outputfile);
@@ -75,10 +83,8 @@ public class Main {
                     stx = x;
                 }
                 blackPixelPresent = true;
-
             } else if (blackPixelPresent) {
-                // This is the end of number
-
+                // This is the end of char
                 //send for recognition the area x1, x2, y1, y2
                 System.out.print(recognizeEnglishChar(stx, x, startY, endY, image));
                 blackPixelPresent = false;
@@ -92,43 +98,66 @@ public class Main {
                 System.out.println(img.getRGB(x, y));
     }
 
+    /**
+     * The lines split the image for cells. Each cell contains the info that we need recognize.
+     * We need coordinates of every cell. We know the line color and we are scanning for it.
+     */
     private static void calculateLines(BufferedImage image) {
-
-        int offsetX = 308;
-        int lineBaseColor = -986896;
-//                            -16777216
-        int linesCount = 0;
+        final int offsetX = 308;
+        int rowsCount = 0;
         int columnsCount = 0;
         for (int y = 0; y < height; y++) {
             int pixelRGB = image.getRGB(offsetX, y);
-//            System.out.println(pixelRGB);
-            if (pixelRGB == lineBaseColor) {
+            if (pixelRGB == LINE_BASE_COLOR) {
+//                The line is 2px width so double increase the counter
                 y++;
                 yLines.add(y);
-                linesCount++;
+                rowsCount++;
 //                System.out.println("Line Found" + ++linesCount);
             }
         }
+//        We need to add the end of the image too
         yLines.add(image.getHeight());
 
-        int offsetY = 3;
+        final int offsetY = 3;
         for (int x = 0; x < width; x++) {
             int pixelRGB = image.getRGB(x, offsetY);
-//            System.out.println(pixelRGB);
-            if (pixelRGB == lineBaseColor) {
+            if (pixelRGB == LINE_BASE_COLOR) {
                 xLines.add(x);
+//                The line is 2px width so double increase the counter
                 x++;
 //                System.out.println("Column Found" + ++columnsCount);
                 columnsCount++;
             }
         }
 
-        System.out.println("Total lines: " + linesCount);
+        System.out.println("Total lines: " + rowsCount);
         System.out.println("Total columns: " + columnsCount);
         System.out.println(yLines);
         System.out.println(xLines);
     }
 
+    /**
+     * This is very useful method when debugging the code. Print the charecter as it is to the screen.
+     *   111111
+     *   111111
+     * 11      11
+     * 11      11
+     *         11
+     *         11
+     *         11
+     *         11
+     *       11
+     *       11
+     *     11
+     *     11
+     *   11
+     *   11
+     * 11
+     * 11
+     * 1111111111
+     * 1111111111
+     */
     private static void printSymbolToScreen(int startX, int startY, int endX, int endY, BufferedImage image) {
         String c = " ";
 //        System.out.println("Processing unit: (x1=" + startX + ", y1=" + startY + " x2=" + endX + ",y2=" + endY + ")");
@@ -136,9 +165,7 @@ public class Main {
             System.out.println("");
             for (int x = startX; x < endX; x++) {
                 int pixel = image.getRGB(x, y);
-
                 if (checkForBlackPixelWithCorrection(pixel)) {
-                    pixel = -8;
                     c = "1";
                 } else c = " ";
                 System.out.print(c);
@@ -156,10 +183,8 @@ public class Main {
                     stx = x;
                 }
                 numberPresent = true;
-
             } else if (numberPresent) {
                 // This is the end of number
-
                 //send for recognition the area x1, x2, y1, y2
                 System.out.print(recognizeNumber(stx, x, startY, endY, image));
                 numberPresent = false;
@@ -169,7 +194,7 @@ public class Main {
 
     private static int recognizeNumber(int startX, int endX, int startY, int endY, BufferedImage image) {
 //        print for debug mode the number
-//        printSymbolToScreen(startX, startY, endX, endY, image);
+        printSymbolToScreen(startX, startY, endX, endY, image);
         //get the sum of black pixels
         int result = 0;
         int sum = 0;
@@ -302,7 +327,6 @@ public class Main {
     }
 
     private static boolean blackPixelInColumn(int x, int startY, int endY, BufferedImage image) {
-        int sum = 0;
         for (int y = startY; y < endY; y++) {
             if (checkForBlackPixelWithCorrection(image.getRGB(x, y))) {
                 return true;
@@ -321,8 +345,12 @@ public class Main {
         return sum;
     }
 
+    /**
+     * All pixels that are more 'blacker' then BLACK_FILTER_COLOR' are black too
+     * This adds more solid font and much easy to recognize.
+     */
     private static boolean checkForBlackPixelWithCorrection(int pixel) {
-        return ((pixel != WHITE_COLOUR) && (pixel < BLACK_FILTER_COLOUR));
+        return ((pixel < BLACK_FILTER_COLOR));
     }
 
 }
