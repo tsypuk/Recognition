@@ -11,3 +11,5 @@ hs_err_pid*
 .idea
 target
 *.iml
+# Do not upload image files to Git.
+*.png
