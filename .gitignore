@@ -13,3 +13,4 @@ target
 *.iml
 # Do not upload image files to Git.
 *.png
+.DS_Store

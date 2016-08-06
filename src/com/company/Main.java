@@ -1,5 +1,6 @@
 package com.company;
 
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -22,8 +23,9 @@ public class Main {
 //	      Read file from FS
         BufferedImage img = null;
         try {
-//            img = ImageIO.read(new File("imm.png"));
-            img = ImageIO.read(new File("screen.png"));
+//            Prepare image for processing
+            img = ImageIO.read(new File("image.png"));
+            img = prepareImage(img);
             width = img.getWidth();
             height = img.getHeight();
             System.out.println(width + "x" + height);
@@ -49,6 +51,19 @@ public class Main {
 //        Find first word
         } catch (IOException e) {
         }
+    }
+
+    private static BufferedImage prepareImage(BufferedImage source) {
+        final int upperLeftConerX = 246;
+        final int upperLeftConerY = 340;
+        BufferedImage subimage = source.getSubimage(upperLeftConerX, upperLeftConerY, 2400 , 1050);
+//        File outputfile = new File("image222.png");
+//        try {
+//            ImageIO.write(subimage, "png", outputfile);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+        return subimage;
     }
 
     private static void readEnglish(int startX, int startY, int endX, int endY, BufferedImage image) {
@@ -94,6 +109,7 @@ public class Main {
 //                System.out.println("Line Found" + ++linesCount);
             }
         }
+        yLines.add(image.getHeight());
 
         int offsetY = 3;
         for (int x = 0; x < width; x++) {
