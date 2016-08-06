@@ -22,9 +22,11 @@ public class Main {
 //	      Read file from FS
         BufferedImage img = null;
         try {
-            img = ImageIO.read(new File("imm.png"));
+//            img = ImageIO.read(new File("imm.png"));
+            img = ImageIO.read(new File("screen.png"));
             width = img.getWidth();
             height = img.getHeight();
+            System.out.println(width + "x" + height);
 //            readPixels(img);
             calculateLines(img);
             int previousX = 0;
@@ -78,25 +80,28 @@ public class Main {
     private static void calculateLines(BufferedImage image) {
 
         int offsetX = 308;
-        int lineBaseColor = -1118482;
+        int lineBaseColor = -986896;
+//                            -16777216
         int linesCount = 0;
         int columnsCount = 0;
         for (int y = 0; y < height; y++) {
             int pixelRGB = image.getRGB(offsetX, y);
 //            System.out.println(pixelRGB);
             if (pixelRGB == lineBaseColor) {
+                y++;
                 yLines.add(y);
                 linesCount++;
 //                System.out.println("Line Found" + ++linesCount);
             }
         }
 
-        int offsetY = 1;
+        int offsetY = 3;
         for (int x = 0; x < width; x++) {
             int pixelRGB = image.getRGB(x, offsetY);
 //            System.out.println(pixelRGB);
             if (pixelRGB == lineBaseColor) {
                 xLines.add(x);
+                x++;
 //                System.out.println("Column Found" + ++columnsCount);
                 columnsCount++;
             }
@@ -159,40 +164,45 @@ public class Main {
                 }
             }
         }
-//        List<Integer> integers = Arrays.asList(188, 104, 160, 161,176,193, 194, 126, 205);
-//        if (!integers.contains(sum)) {
-//            System.out.println(sum);
-//        }
+
         switch (sum) {
-            case 188:
-                result = 0;
-                break;
-            case 104:
+            case 44:
                 result = 1;
                 break;
-            case 160:
-                result = 2;
+            case 64:
+                //3
+                if (getBlackPixelCountInColumn(startX, startY, endY, image) == 4) {
+                    result = 3;
+                } else {
+                    result = 2;
+                }
                 break;
-            case 161:
-                result = 3;
-                break;
-            case 176:
+            case 72:
                 result = 4;
                 break;
             case 193:
                 result = 5;
                 break;
-            case 194:
-                //6 or 9
+            case 80:
+                //6 or 9 0
                 //double check
-                if (getBlackPixelCountInColumn(startX, startY, endY, image) > 1) {
-                    return 6;
+                if (getBlackPixelCountInColumn(startX, startY, endY, image) == 12) {
+                    return 5;
+                } else if (getBlackPixelCountInColumn(startX, startY, endY, image) == 8) {
+                    return 9;
+                } else if (
+                        (getBlackPixelCountInColumn(startX, startY, endY, image) == 14)
+                                &&
+                                (getBlackPixelCountInColumn(startX + 2, startY, endY, image) == 6)) {
+                    result = 6;
+                } else {
+                    return 0;
                 }
-                return 9;
-            case 126:
+                break;
+            case 52:
                 result = 7;
                 break;
-            case 205:
+            case 84:
                 result = 8;
                 break;
         }
@@ -211,37 +221,24 @@ public class Main {
                 }
             }
         }
-//        List<Integer> integers = Arrays.asList(188, 104, 160, 161,176,193, 194, 126, 205);
-//        if (!integers.contains(sum)) {
-//            System.out.println(sum);
-//        }
         switch (sum) {
-            case 154:
+            case 64:
                 return "a";
-            case 179:
-            // b d
-                int count = getBlackPixelCountInColumn(startX+3, startY, endY, image);
-            if (count == 9) {
-                return "b";
-            } else if (count == 8)
-                return "d";
-            else if(count == 7) return "w";
-            return "d";
             case 120:
                 return "c";
             case 157:
                 return "e";
             case 98:
                 return "f";
-            case 199:
+            case 84:
                 return "g";
             case 162:
                 return "h";
-            case 69:
+            case 28:
                 return "i";
             case 153:
                 return "k";
-            case 83:
+            case 36:
                 //l I
 //                if (getBlackPixelCountInColumn(startX, startY, endY, image) > 27) {
 //                    return "I";
@@ -261,7 +258,7 @@ public class Main {
                 return "s";
             case 89:
                 return "t";
-            case 101:
+            case 40:
                 return "v";
             case 136:
                 return "y";
@@ -271,8 +268,13 @@ public class Main {
                 return "ty";
             case 326:
                 return "my";
-            case 188:
-                return "A";
+            case 76:
+                int count = getBlackPixelCountInColumn(startX + 3, startY, endY, image);
+                if (count == 4) {
+                    return "b";
+                } else {
+                    return "A";
+                }
             case 169:
                 return "S";
             case 187:
