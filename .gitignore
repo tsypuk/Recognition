@@ -12,7 +12,7 @@ hs_err_pid*
 target
 *.iml
 # Do not upload image files to Git.
-*.png
+image.png
 .DS_Store
 .gradle/
 build/

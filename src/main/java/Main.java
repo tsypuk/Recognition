@@ -9,6 +9,8 @@ import java.util.List;
 
 import javax.imageio.ImageIO;
 
+// TODO create second algorithm that will compare not pixel's count in column, but images from the dictionary.
+
 // TODO Parrallel the tasks for groups of text.
 
 // TODO Add JUint to test the image files library with the recognition results.
@@ -16,8 +18,8 @@ import javax.imageio.ImageIO;
 // TODO Add connection to DB using JDBC to write results of recognition to Mysql.
 
 /**
- * This is the scratch of recognitaion.
- * The basic alhorithm that calculates the nubmer of pixel in each area and compares it to dictionary.
+ * This is the scratch of recognition.
+ * The basic algorithm that calculates the number of pixel in each area and compares it to dictionary.
  */
 
 public class Main {
@@ -96,7 +98,8 @@ public class Main {
                 System.out.print(recognizedNumber);
 //                System.out.print(recognizeNumber(0, number.getWidth(), 0, number.getHeight(), image));
 
-                writeImageToFile(0, numberImage.getWidth(), 0, numberImage.getHeight(), numberImage, "numbers/" + String.valueOf
+                writeImageToFile(0, numberImage.getWidth(), 0, numberImage.getHeight(), numberImage, "numbers/" +
+                        String.valueOf
                         (recognizedNumber));
                 numberPresent = false;
             }
@@ -117,12 +120,22 @@ public class Main {
                 BufferedImage letterImage = preprocessLetter(stx, x, startY, endY, image);
                 //send for recognition the area x1, x2, y1, y2
                 String recognizedLetter = recognizeEnglishChar(stx, x, startY, endY, image);
-                System.out.print(recognizedLetter + " ");
-                writeImageToFile(0, letterImage.getWidth(), 0, letterImage.getHeight(), letterImage, "char/" + String.valueOf
-                        (recognizedLetter));
+                System.out.print(recognizedLetter);
+                String dir = isUpperCase(recognizedLetter) ? "capitalize/" : "char/";
+
+                writeImageToFile(0, letterImage.getWidth(), 0, letterImage.getHeight(), letterImage, dir +
+                        recognizedLetter);
                 blackPixelPresent = false;
             }
         }
+    }
+
+    private static boolean isUpperCase(String str) {
+        boolean result = true;
+        for (char element : str.toCharArray()) {
+            result &= Character.isUpperCase(element);
+        }
+        return result;
     }
 
     private static void readPixels(BufferedImage img) {
@@ -328,10 +341,13 @@ public class Main {
                     return "z";
                 }
             case 76:
-                //d b
+                //d b A
                 count = getBlackPixelCountInColumn(startX, startY, endY, image);
                 if (count == 8) {
                     return "d";
+                }
+                if (count == 4) {
+                    return "A";
                 } else {
                     return "b";
                 }
