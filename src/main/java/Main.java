@@ -1,4 +1,5 @@
-package com.company;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -8,11 +9,7 @@ import java.util.List;
 
 import javax.imageio.ImageIO;
 
-// TODO Create graphical alphabet: every symbol write to file 'A' -> A.png for next aplhorithm of recognition with images compare.
-
 // TODO Parrallel the tasks for groups of text.
-
-// TODO add gradle, slf4j.
 
 // TODO Add JUint to test the image files library with the recognition results.
 
@@ -22,10 +19,13 @@ import javax.imageio.ImageIO;
  * This is the scratch of recognitaion.
  * The basic alhorithm that calculates the nubmer of pixel in each area and compares it to dictionary.
  */
+
 public class Main {
+    private static Logger LOGGER = LoggerFactory.getLogger(Main.class);
     //    private static final int BLACK_FILTER_COLOR = -11579569;
     private static final int BLACK_FILTER_COLOR = -1157956;
     private static final int LINE_BASE_COLOR = -986896;
+    private static int imagecounter = 0;
 
     private static int width;
     private static int height;
@@ -40,16 +40,19 @@ public class Main {
             img = prepareImage(img);
             width = img.getWidth();
             height = img.getHeight();
-            System.out.println(width + "x" + height);
+            LOGGER.info("Image resolution is: " + width + "x" + height);
             calculateLines(img);
             int previousX = 0;
             int previousY = 0;
 
             for (Integer yLine : yLines) {
+                // ID
                 readNumber(previousX, previousY, xLines.get(0), yLine, img);
                 System.out.print("  :  ");
+                // nickName
                 readEnglish(xLines.get(0), previousY, xLines.get(1), yLine, img);
                 System.out.print("  :  ");
+                // position
                 readEnglish(xLines.get(1), previousY, xLines.get(2), yLine, img);
                 System.out.println();
                 previousY = yLine;
@@ -59,7 +62,7 @@ public class Main {
     }
 
     /**
-     *  Removes the areas that do not hold information and do not take place in information recognition.
+     * Removes the areas that do not hold information and do not take place in information recognition.
      */
     private static BufferedImage prepareImage(BufferedImage source) {
         final int upperLeftConerX = 246;
@@ -74,6 +77,32 @@ public class Main {
         return subimage;
     }
 
+    private static void readNumber(int startX, int startY, int endX, int endY, BufferedImage image) {
+        boolean numberPresent = false;
+        int stx = 0;
+        for (int x = startX; x < endX; x++) {
+            if (blackPixelInColumn(x, startY, endY, image)) {
+                if (!numberPresent) {
+                    stx = x;
+                }
+                numberPresent = true;
+            } else if (numberPresent) {
+                // This is the end of number
+                // Cut letter from the image
+                BufferedImage numberImage = preprocessLetter(stx, x, startY, endY, image);
+                //send for recognition the area x1, x2, y1, y2
+                int recognizedNumber = recognizeNumber(0, numberImage.getWidth(), 0, numberImage.getHeight(),
+                        numberImage);
+                System.out.print(recognizedNumber);
+//                System.out.print(recognizeNumber(0, number.getWidth(), 0, number.getHeight(), image));
+
+                writeImageToFile(0, numberImage.getWidth(), 0, numberImage.getHeight(), numberImage, "numbers/" + String.valueOf
+                        (recognizedNumber));
+                numberPresent = false;
+            }
+        }
+    }
+
     private static void readEnglish(int startX, int startY, int endX, int endY, BufferedImage image) {
         boolean blackPixelPresent = false;
         int stx = 0;
@@ -85,8 +114,12 @@ public class Main {
                 blackPixelPresent = true;
             } else if (blackPixelPresent) {
                 // This is the end of char
+                BufferedImage letterImage = preprocessLetter(stx, x, startY, endY, image);
                 //send for recognition the area x1, x2, y1, y2
-                System.out.print(recognizeEnglishChar(stx, x, startY, endY, image));
+                String recognizedLetter = recognizeEnglishChar(stx, x, startY, endY, image);
+                System.out.print(recognizedLetter + " ");
+                writeImageToFile(0, letterImage.getWidth(), 0, letterImage.getHeight(), letterImage, "char/" + String.valueOf
+                        (recognizedLetter));
                 blackPixelPresent = false;
             }
         }
@@ -139,20 +172,20 @@ public class Main {
 
     /**
      * This is very useful method when debugging the code. Print the charecter as it is to the screen.
-     *   111111
-     *   111111
+     * 111111
+     * 111111
      * 11      11
      * 11      11
-     *         11
-     *         11
-     *         11
-     *         11
-     *       11
-     *       11
-     *     11
-     *     11
-     *   11
-     *   11
+     * 11
+     * 11
+     * 11
+     * 11
+     * 11
+     * 11
+     * 11
+     * 11
+     * 11
+     * 11
      * 11
      * 11
      * 1111111111
@@ -174,27 +207,49 @@ public class Main {
         }
     }
 
-    private static void readNumber(int startX, int startY, int endX, int endY, BufferedImage image) {
-        boolean numberPresent = false;
-        int stx = 0;
-        for (int x = startX; x < endX; x++) {
-            if (blackPixelInColumn(x, startY, endY, image)) {
-                if (!numberPresent) {
-                    stx = x;
-                }
-                numberPresent = true;
-            } else if (numberPresent) {
-                // This is the end of number
-                //send for recognition the area x1, x2, y1, y2
-                System.out.print(recognizeNumber(stx, x, startY, endY, image));
-                numberPresent = false;
+
+    /**
+     * We are cutting the symbol rectangle from the whole image
+     */
+    private static BufferedImage preprocessLetter(int stx, int x, int startY, int endY, BufferedImage image) {
+        final int maxPixels = 30;
+//        Find top and buttom of the image and cut its size
+        BufferedImage subimage = image.getSubimage(stx, startY, x - stx, endY - startY);
+
+        int topY = 0;
+        for (int y = 0; y < maxPixels; y++) {
+            if (blackPixelInRow(y, 0, subimage.getWidth(), subimage)) {
+                topY = y;
+                break;
             }
+        }
+
+        int bottomY = subimage.getHeight() - 1;
+        for (int y = bottomY; y > subimage.getHeight() - maxPixels; y--) {
+            if (blackPixelInRow(y, 0, subimage.getWidth(), subimage)) {
+                bottomY = y;
+                break;
+            }
+        }
+
+        return subimage.getSubimage(0, topY, subimage.getWidth(), bottomY - topY + 1);
+    }
+
+    private static void writeImageToFile(int stx, int x, int startY, int endY, BufferedImage image, String
+            recognizedNumber) {
+        BufferedImage subimage = image.getSubimage(stx, startY, x - stx, endY - startY);
+        File outputfile = new File("alphabet/" + recognizedNumber + ".png");
+        try {
+            outputfile.createNewFile();
+            ImageIO.write(subimage, "png", outputfile);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
     private static int recognizeNumber(int startX, int endX, int startY, int endY, BufferedImage image) {
 //        print for debug mode the number
-        printSymbolToScreen(startX, startY, endX, endY, image);
+//        printSymbolToScreen(startX, startY, endX, endY, image);
         //get the sum of black pixels
         int result = 0;
         int sum = 0;
@@ -262,72 +317,110 @@ public class Main {
                 }
             }
         }
+        int count = 0;
         switch (sum) {
+            case 48:
+                // c z
+                count = getBlackPixelCountInColumn(startX, startY, endY, image);
+                if (count == 8) {
+                    return "c";
+                } else {
+                    return "z";
+                }
+            case 76:
+                //d b
+                count = getBlackPixelCountInColumn(startX, startY, endY, image);
+                if (count == 8) {
+                    return "d";
+                } else {
+                    return "b";
+                }
             case 64:
-                return "a";
-            case 120:
-                return "c";
-            case 157:
-                return "e";
-            case 98:
-                return "f";
+                // e a
+                count = getBlackPixelCountInColumn(startX, startY, endY, image);
+                if (count == 8) {
+                    return "e";
+                } else {
+                    return "a";
+                }
             case 84:
                 return "g";
-            case 162:
-                return "h";
-            case 28:
-                return "i";
-            case 153:
+            case 68:
+                count = getBlackPixelCountInColumn(startX, startY, endY, image);
+                if (count == 18) {
+                    return "h";
+                }
+                return "S";
+            case 60:
                 return "k";
             case 36:
-                //l I
-//                if (getBlackPixelCountInColumn(startX, startY, endY, image) > 27) {
-//                    return "I";
-//                }
-                return "l";
-            case 190:
-                return "m";
-            case 135:
-                return "n";
-            case 134:
-                return "o";
-            case 170:
-                return "p";
-            case 66:
-                return "r";
-            case 110:
-                return "s";
-            case 89:
-                return "t";
-            case 40:
-                return "v";
-            case 136:
-                return "y";
-            case 118:
-                return "z";
-            case 225:
-                return "ty";
-            case 326:
-                return "my";
-            case 76:
-                int count = getBlackPixelCountInColumn(startX + 3, startY, endY, image);
-                if (count == 4) {
-                    return "b";
+                // l=18 t=14
+                count = getBlackPixelCountInColumn(startX, startY, endY, image);
+                if (count == 18) {
+                    return "l";
                 } else {
-                    return "A";
+                    return "t";
                 }
-            case 169:
-                return "S";
-            case 187:
+            case 80:
+                count = getBlackPixelCountInColumn(startX, startY, endY, image);
+                if (count == 12) {
+                    return "m";
+                }
                 return "E";
-            default:
-//                System.out.println(sum);
+            case 56:
+                // n o u
+                count = getBlackPixelCountInColumn(startX, startY, endY, image);
+                if (count == 8) {
+                    return "o";
+                } else if (count == 12) {
+                    return "n";
+                } else {
+                    return "u";
+                }
+            case 72:
+                count = getBlackPixelCountInColumn(startX, startY, endY, image);
+                if (count == 8) {
+                    return "w";
+                }
+                return "p";
+            case 28:
+                // r i
+                count = getBlackPixelCountInColumn(startX, startY, endY, image);
+                if (count == 12) {
+                    return "r";
+                } else {
+                    return "i";
+                }
+            case 40:
+                // f v s
+                count = getBlackPixelCountInColumn(startX, startY, endY, image);
+                if (count == 16) {
+                    return "f";
+                } else if ((count == 4) && (getBlackPixelCountInColumn(startX + 3, startY, endY, image) == 4)) {
+                    return "v";
+                } else return "s";
+            case 92:
+                return "ty";
+            case 136:
+                return "my";
+            case 116:
+                return "ky";
+
         }
         return String.valueOf(sum);
     }
 
     private static boolean blackPixelInColumn(int x, int startY, int endY, BufferedImage image) {
         for (int y = startY; y < endY; y++) {
+            if (checkForBlackPixelWithCorrection(image.getRGB(x, y))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean blackPixelInRow(int y, int startX, int endX, BufferedImage image) {
+        for (int x = startX; x < endX; x++) {
             if (checkForBlackPixelWithCorrection(image.getRGB(x, y))) {
                 return true;
             }
