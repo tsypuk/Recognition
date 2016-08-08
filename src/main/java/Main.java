@@ -20,6 +20,9 @@ import javax.imageio.ImageIO;
 /**
  * This is the scratch of recognition.
  * The basic algorithm that calculates the number of pixel in each area and compares it to dictionary.
+ * PROS: the easiest algorithm, very visual for understanding.
+ * CONS: it working only for concret resolution. If change picture resolution - the recognition fails.
+ *       Really hard to support - lots of collisions in case statements.
  */
 
 public class Main {
@@ -56,6 +59,12 @@ public class Main {
                 System.out.print("  :  ");
                 // position
                 readEnglish(xLines.get(1), previousY, xLines.get(2), yLine, img);
+                System.out.print("  :  ");
+//                location
+                readEnglish(xLines.get(3), previousY, xLines.get(4), yLine, img);
+                System.out.print("  :  ");
+//                name
+                readEnglish(xLines.get(8), previousY, xLines.get(9), yLine, img);
                 System.out.println();
                 previousY = yLine;
             }
@@ -176,6 +185,7 @@ public class Main {
                 columnsCount++;
             }
         }
+        xLines.add(image.getWidth());
 
         System.out.println("Total lines: " + rowsCount);
         System.out.println("Total columns: " + columnsCount);
@@ -332,12 +342,14 @@ public class Main {
         }
         int count = 0;
         switch (sum) {
+            case 4:
+                return ".";
             case 48:
                 // c z
                 count = getBlackPixelCountInColumn(startX, startY, endY, image);
                 if (count == 8) {
                     return "c";
-                } else {
+                } else if(count == 6) {
                     return "z";
                 }
             case 76:
@@ -348,41 +360,72 @@ public class Main {
                 }
                 if (count == 4) {
                     return "A";
-                } else {
+                } else if (count == 18) {
                     return "b";
                 }
+            case 96:
+                //R
+                return "B";
+            case 88:
+                return "D";
             case 64:
                 // e a
                 count = getBlackPixelCountInColumn(startX, startY, endY, image);
                 if (count == 8) {
                     return "e";
-                } else {
+                } else if (count == 4){
                     return "a";
                 }
             case 84:
-                return "g";
+                count = getBlackPixelCountInColumn(startX, startY, endY, image);
+                if (count == 10) {
+                    return "g";
+                } else if (count == 18) {
+                    return "F";
+                }
+
             case 68:
                 count = getBlackPixelCountInColumn(startX, startY, endY, image);
                 if (count == 18) {
                     return "h";
+                } else if (count == 8) {
+                    return "S";
                 }
-                return "S";
             case 60:
-                return "k";
+                count = getBlackPixelCountInColumn(startX, startY, endY, image);
+                if (count == 18) {
+                    return "k";
+                } else if (count == 14){
+                    return "C";
+                }
             case 36:
                 // l=18 t=14
                 count = getBlackPixelCountInColumn(startX, startY, endY, image);
                 if (count == 18) {
                     return "l";
-                } else {
+                } else if(count == 14) {
                     return "t";
+                }
+            case 52:
+                count = getBlackPixelCountInColumn(startX, startY, endY, image);
+                if (count == 18) {
+                    return "L";
+                } else if(count == 12) {
+                    return "ry";
                 }
             case 80:
                 count = getBlackPixelCountInColumn(startX, startY, endY, image);
                 if (count == 12) {
                     return "m";
+                } else if (count == 18) {
+                    return "E";
                 }
-                return "E";
+
+            case 112:
+                count = getBlackPixelCountInColumn(startX, startY, endY, image);
+                if (count == 18) {
+                    return "M";
+                }
             case 56:
                 // n o u
                 count = getBlackPixelCountInColumn(startX, startY, endY, image);
@@ -390,37 +433,56 @@ public class Main {
                     return "o";
                 } else if (count == 12) {
                     return "n";
-                } else {
+                } else if (count == 10) {
                     return "u";
                 }
             case 72:
                 count = getBlackPixelCountInColumn(startX, startY, endY, image);
                 if (count == 8) {
                     return "w";
+                } else if (count == 2) {
+                    return "p";
+                } else if (count == 18) {
+                    return "K";
                 }
-                return "p";
+
             case 28:
                 // r i
                 count = getBlackPixelCountInColumn(startX, startY, endY, image);
                 if (count == 12) {
                     return "r";
-                } else {
+                } else if (count == 14){
                     return "i";
                 }
             case 40:
                 // f v s
                 count = getBlackPixelCountInColumn(startX, startY, endY, image);
                 if (count == 16) {
-                    return "f";
-                } else if ((count == 4) && (getBlackPixelCountInColumn(startX + 3, startY, endY, image) == 4)) {
-                    return "v";
-                } else return "s";
+                    if (getBlackPixelCountInColumn(startX+5, startY, endY, image) == 4) {
+                        return "p";
+                    } else if (getBlackPixelCountInColumn(startX+5, startY, endY, image) == 0) {
+                        return "f";
+                    }
+                } else if (count == 4) {
+                    int count2 = getBlackPixelCountInColumn(startX + 3, startY, endY, image);
+                    if (count2 == 4){
+                        return "v";
+                    }
+                    else if(count2 == 6) {
+                            if (getBlackPixelCountInColumn(startX + 6, startY, endY, image) == 4){
+                            return "s";
+                        }
+                    }
+                }
+                break;
             case 92:
                 return "ty";
             case 136:
                 return "my";
             case 116:
                 return "ky";
+            case 128:
+                return "Lv";
 
         }
         return String.valueOf(sum);
