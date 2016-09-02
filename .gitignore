@@ -11,8 +11,11 @@ hs_err_pid*
 .idea
 target
 *.iml
+*.png
 # Do not upload image files to Git.
-image.png
+alphabet/
+position/
+images/
 .DS_Store
 .gradle/
 build/
