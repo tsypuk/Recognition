@@ -26,6 +26,7 @@ import javax.imageio.ImageIO;
  */
 
 public class Main {
+    failure
     private static Logger LOGGER = LoggerFactory.getLogger(Main.class);
     //    private static final int BLACK_FILTER_COLOR = -11579569;
     private static final int BLACK_FILTER_COLOR = -1157956;
